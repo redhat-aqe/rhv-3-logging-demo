@@ -1,0 +1,118 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: example-template
+objects:
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: demo-app
+      labels:
+        app: demo-app
+        service: demo-app
+    spec:
+      ports:
+      - name: demo-app
+        port: 8080
+        protocol: TCP
+      selector:
+        service: demo-app
+
+  - apiVersion: v1
+    kind: Route
+    metadata:
+      name: demo-app
+      labels:
+        app: demo-app
+        service: demo-app
+    spec:
+      to:
+        kind: Service
+        name: demo-app
+
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      name: demo-app
+      labels:
+        app: demo-app
+        service: demo-app
+    spec:
+      replicas: 1
+      selector:
+        app: demo-app
+      template:
+        metadata:
+          labels:
+            app: demo-app
+            service: demo-app
+        spec:
+          volumes:
+            - name: kafka-ca
+              secret:
+                secretName: kafka-ca
+          containers:
+            - name: demo-app
+              image: docker-registry.default.svc:5000/demo-project/demo-app:latest
+              imagePullPolicy: Always
+              resources:
+                limits:
+                  memory: 512Mi
+              ports:
+              - containerPort: 8080
+                protocol: TCP
+              livenessProbe:
+                httpGet:
+                  path: /health
+                  port: 8080
+                initialDelaySeconds: 15
+                periodSeconds: 3
+              volumeMounts:
+                - name: kafka-ca
+                  mountPath: /etc/secrets
+              env:
+              - name: KAFKA_SERVER
+                value: replace.with.kafka.url:port
+              - name: KAFKA_TOPIC
+                value: replace-with-kafka-topic
+              - name: KAFKA_CERT
+                value: /etc/secrets/kafka-ca.crt
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            from:
+              kind: "ImageStreamTag"
+              name: "demo-app:latest"
+            containerNames:
+              - demo-app
+
+  - apiVersion: v1
+    kind: BuildConfig
+    metadata:
+      labels:
+        app: demo-app
+      name: demo-app
+    spec:
+      output:
+        to:
+          kind: DockerImage
+          name: docker-registry.default.svc:5000/demo-project/demo-app:latest
+      runPolicy: Serial
+      resources:
+        limits:
+          memory: "1Gi"
+      source:
+        git:
+          uri: https://github.com/redhat-aqe/rhv3-logging-demo.git
+          ref: master
+        contextDir: demo_app
+        type: Git
+      strategy:
+        dockerStrategy:
+          from:
+            kind: DockerImage
+            name: rhscl/python-36-rhel7:latest
+        type: Docker

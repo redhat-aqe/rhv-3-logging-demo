@@ -1,0 +1,47 @@
+---
+name: "Error in the logging demo app"
+
+# usage of full index name (with strftime) improves performance
+use_strftime_index: true
+index: replace-with-index-name-*
+timestamp_field: "timestamp"
+
+# log filter configuration
+type: "any"
+filter:
+  - query:
+      query_string:
+        query: >
+          levelname: ERROR
+
+# alerts configuration
+alert:
+  - "email"
+email:
+  - "replaceme@email.com"
+smtp_host: "replace.with.smtp.host"
+smtp_port: 587
+from_addr: "replace-from@email.com"
+
+index_id: replace-with-index-id
+alert_text_args:
+  - '@timestamp'
+  - index_id
+  - _index
+  - _id
+  - levelname
+  - message
+  - exc_text
+
+alert_text_type: exclude_fields
+alert_text: "
+  Timestamp: {0}
+
+  Link to Kibana: https://replace.with.kibana.url/app/kibana#/doc/{1}/{2}/log?id={3}&_g=()
+
+
+  {4}:
+
+  {5}
+
+  {6}"

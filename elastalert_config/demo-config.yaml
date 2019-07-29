@@ -1,0 +1,32 @@
+# ElastaAlert configuration for Datahub
+---
+
+# run all .yaml rules from the directory
+rules_folder: rules/
+
+# retrieval of logs interval
+# (lower value to suite all projects)
+run_every:
+  seconds: 10
+
+# buffer time is required
+# (it is maximum time interval requested from ElastiSearch)
+buffer_time:
+  minutes: 15
+
+# ElasticSearch configuration
+es_host: replace.with.elasticsearch.endpoint
+es_port: 8888
+use_ssl: true
+
+verify_certs: false
+client_cert: elasticsearch-key.crt
+client_key: elasticsearch-key.key
+
+# ElastAlert index (where to store processed _ids)
+# certificate has R/W access to to the index
+writeback_index: replace-with-writeback-index
+
+# repeat alert attempts (in case of failure)
+alert_time_limit:
+  days: 3
